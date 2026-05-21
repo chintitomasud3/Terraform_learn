@@ -1,0 +1,4 @@
+command :
+
+aws sts get-caller-identity
+aws iam list-users
