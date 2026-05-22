@@ -1,0 +1,63 @@
+name: Deploy App
+
+on:
+  push:
+    branches: [main]
+
+# 👇 ১. একই সাথে দুটি পাইপলাইন রান হওয়া বন্ধ করবে
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy FastAPI
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.BE_IP }}
+          username: ubuntu
+          key: ${{ secrets.SSH_KEY }}
+          
+          # 💡 যদি সার্ভার প্রাইভেট সাবনেটে হয়, তবে নিচে Bastion-এর এই ৩টি লাইন আনকমেন্ট করবেন:
+          # proxy_host: ${{ secrets.BASTION_PUBLIC_IP }}
+          # proxy_username: ubuntu
+          # proxy_key: ${{ secrets.SSH_KEY }}
+          
+          script: |
+            cd /opt/backend
+            # 👇 ২. সার্ভারের লোকাল কোনো ফাইল চেঞ্জ থাকলে তা মুছে ক্লিয়ার করবে যেন pull না আটকায়
+            git fetch --all
+            git reset --hard origin/main
+            
+            source venv/bin/activate
+            pip install -r requirements.txt
+            sudo systemctl restart fastapi
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy Node.js
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.FE_IP }}
+          username: ubuntu
+          key: ${{ secrets.SSH_KEY }}
+          
+          # 💡 যদি সার্ভার প্রাইভেট সাবনেটে হয়, তবে নিচে Bastion-এর এই ৩টি লাইন আনকমেন্ট করবেন:
+          # proxy_host: ${{ secrets.BASTION_PUBLIC_IP }}
+          # proxy_username: ubuntu
+          # proxy_key: ${{ secrets.SSH_KEY }}
+          
+          script: |
+            cd /var/www/frontend
+            # 👇 ৩. লোকাল গিট স্টেট ক্লিন করা হচ্ছে
+            git fetch --all
+            git reset --hard origin/main
+            
+            npm install --production
+            npm run build
+            sudo systemctl reload nginx
