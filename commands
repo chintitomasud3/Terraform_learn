@@ -1,0 +1,2 @@
+command : terraform fmt         ## formating 
+command : terraform state list   ## state check korar jonne
