@@ -69,3 +69,68 @@ resource "aws_security_group" "example" {
 
 }
 
+resource "aws_vpc" "example" {
+  cidr_block = "10.0.0.0/16"
+  tags = {
+    Name = "chintito_vpc_terraform"
+  }
+}
+
+#public subnet
+resource "aws_subnet" "public_subnet" {
+  vpc_id            = aws_vpc.example.id
+  cidr_block        = "10.0.1.0/24"
+  availability_zone = "ap-south-1a"
+  tags = {
+    Name = "chintito_subnet_terraform"
+  }
+}
+
+resource "aws_subnet" "private_subnet" {
+  vpc_id            = aws_vpc.example.id
+  cidr_block        = "10.0.12.0/24"
+  availability_zone = "ap-south-1a"
+  tags = {
+    Name = "chintito_subnet_terraform"
+  }
+}
+
+
+resource "aws_internet_gateway" "my-igw" {
+  vpc_id = aws_vpc.example.id
+  tags = {
+    Name = "chintito_igw_terraform"
+  }
+}
+
+resource "aws_route_table" "public_rt" {
+  vpc_id = aws_vpc.example.id
+  tags = {
+    Name = "chintito_public_rt_terraform"
+  }
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.my-igw.id
+  }
+} 
+
+resource "aws_route_table_association" "public_rt_association" {
+  subnet_id      = aws_subnet.public_subnet.id
+  route_table_id = aws_route_table.public_rt.id
+}
+
+
+
+
+
+
+# data "aws_vpc" "specific" {
+#   filter {
+#     name   = "tag:Name"
+#     values = ["chintito_aws-vpc"]
+#   }
+# }
+
+# output "vpc_id" {
+#   value = data.aws_vpc.specific.id
+# }
