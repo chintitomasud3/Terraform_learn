@@ -30,21 +30,31 @@ data "aws_ami" "ubuntu" {
 }
 
 
-resource "aws_instance" "app_server" {
+resource "aws_instance" "frontend_server" {
   ami           = "ami-07a00cf47dbbc844c"
   instance_type = "t3.micro"
-
+  subnet_id     = aws_subnet.public_subnet.id
+  vpc_security_group_ids = [aws_security_group.chintito_sg.id]
+  
+  key_name     = "private_asia_masud"
+  associate_public_ip_address = true
   tags = {
-    Name = "masud_server_02"
+    Name = "masud_frontend_server"
   }
 }
 
+resource "aws_vpc" "chintito_vpc" {
+  cidr_block = "10.0.0.0/16"
+  tags = {
+    Name = "chintito_vpc_terraform"
+  }
+}
 
-
-resource "aws_security_group" "example" {
+resource "aws_security_group" "chintito_sg" {
  
   name        = "chintito_masud"
-  description = "Example security group"
+  description = "Security Group Created By masudur rahman"
+  vpc_id      = aws_vpc.chintito_vpc.id
   #SSh Access
   ingress {
     from_port   = 22
@@ -69,42 +79,37 @@ resource "aws_security_group" "example" {
 
 }
 
-resource "aws_vpc" "example" {
-  cidr_block = "10.0.0.0/16"
-  tags = {
-    Name = "chintito_vpc_terraform"
-  }
-}
+
 
 #public subnet
 resource "aws_subnet" "public_subnet" {
-  vpc_id            = aws_vpc.example.id
+  vpc_id            = aws_vpc.chintito_vpc.id
   cidr_block        = "10.0.1.0/24"
   availability_zone = "ap-south-1a"
   tags = {
-    Name = "chintito_subnet_terraform"
+    Name = "chintito_subnet_Public_terraform"
   }
 }
 
 resource "aws_subnet" "private_subnet" {
-  vpc_id            = aws_vpc.example.id
+  vpc_id            = aws_vpc.chintito_vpc.id
   cidr_block        = "10.0.12.0/24"
   availability_zone = "ap-south-1a"
   tags = {
-    Name = "chintito_subnet_terraform"
+    Name = "chintito_subnet_Private_terraform"
   }
 }
 
 
 resource "aws_internet_gateway" "my-igw" {
-  vpc_id = aws_vpc.example.id
+  vpc_id = aws_vpc.chintito_vpc.id
   tags = {
     Name = "chintito_igw_terraform"
   }
 }
 
 resource "aws_route_table" "public_rt" {
-  vpc_id = aws_vpc.example.id
+  vpc_id = aws_vpc.chintito_vpc.id
   tags = {
     Name = "chintito_public_rt_terraform"
   }
