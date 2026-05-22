@@ -31,13 +31,20 @@ data "aws_ami" "ubuntu" {
 
 
 resource "aws_instance" "frontend_server" {
-  ami           = "ami-07a00cf47dbbc844c"
+  ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.micro"
   subnet_id     = aws_subnet.public_subnet.id
   vpc_security_group_ids = [aws_security_group.chintito_sg.id]
   
   key_name     = "private_asia_masud"
   associate_public_ip_address = true
+   # 👇 USER DATA START
+ user_data = <<-EOF
+              #!/bin/bash
+              echo "<h1>Hello from chintitomasudserver</h1>" > /tmp/masudoutput.txt
+              chmod 644 /tmp/masudoutput.txt
+              EOF
+ user_data_replace_on_change   = false         
   tags = {
     Name = "masud_frontend_server"
   }
@@ -75,6 +82,15 @@ resource "aws_security_group" "chintito_sg" {
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+  tags = {
+    Name = "chintito_sg_terraform"
   }
 
 }
