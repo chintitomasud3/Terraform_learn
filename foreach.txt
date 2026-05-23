@@ -1,0 +1,25 @@
+variable "server_names" {
+  description = "প্রতিটি ইনস্ট্যান্সের কাস্টম নাম"
+  type        = list(string)
+  default     = ["web_dev", "web_staging", "web_prod"]
+}
+
+resource "aws_instance" "frontend_servers" {
+  for_each      = toset(var.server_names)
+  ami           = data.aws_ami.ubuntu.id
+  instance_type = "t3.micro"
+  subnet_id     = aws_subnet.public_subnet.id
+  vpc_security_group_ids = [aws_security_group.chintito_sg.id]
+  key_name      = "private_asia_masud"
+  associate_public_ip_address = true
+
+  user_data = <<-EOF
+              #!/bin/bash
+              echo "<h1>Hello from ${each.value}</h1>" > /tmp/masudoutput.txt
+              chmod 644 /tmp/masudoutput.txt
+              EOF
+
+  tags = {
+    Name = "masud_${each.value}"
+  }
+}
